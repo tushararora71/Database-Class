@@ -1,6 +1,1253 @@
-*.class
+import java.io.*;
+import java.lang.reflect.*;
+import java.util.*;
+class DatabaseException extends Exception
+{
+	DatabaseException(String str)
+	{
+		super(str);
+	}
+}
 
-# Package Files #
-*.jar
-*.war
-*.ear
+class UpdateBeforeSelectException extends DatabaseException
+{
+	UpdateBeforeSelectException(String str)
+	{
+		super(str);
+	}
+}
+class InvalidArgumentException extends DatabaseException
+{
+	InvalidArgumentException(String str)
+	{
+		super(str);
+	}
+}
+class EmptyFileException extends DatabaseException
+{
+	EmptyFileException(String str)
+	{
+		super(str);
+	}
+}
+
+class NullMemberException extends DatabaseException 
+{
+	NullMemberException(String str)
+	{
+		super(str);
+	}
+}
+
+class FileAlreadyPresentException extends DatabaseException
+{
+	FileAlreadyPresentException(String str)
+	{
+		super(str);
+	}
+}
+
+class FileNotPresentException extends DatabaseException
+{
+	FileNotPresentException(String str)
+	{
+		super(str);
+	}
+}
+
+class FileNameNotKnownException extends DatabaseException
+{
+	FileNameNotKnownException(String str)
+	{
+		super(str);
+	}	
+}
+
+class PrivateMemberException extends DatabaseException
+{
+	PrivateMemberException(String str)	
+	{
+		super(str);
+	}
+}
+
+class ReadBeforeInitException extends DatabaseException
+{
+	ReadBeforeInitException(String str)
+	{
+		super(str);
+	}	
+}
+class PrimitiveTypeNotFoundException extends DatabaseException
+{
+	PrimitiveTypeNotFoundException(String str)
+	{
+		super(str);
+	}		
+}
+class DatabaseIOException extends DatabaseException
+{
+	DatabaseIOException(String str)
+	{
+		super(str);
+	}
+}
+
+class ClassMembersModifiedException extends DatabaseException
+{
+	ClassMembersModifiedException(String str)
+	{
+		super(str);
+	}
+}
+
+class StringLimitExceededException extends DatabaseException
+{
+	StringLimitExceededException(String str)
+	{
+		super(str);
+	}
+}
+class Database
+{
+	
+	static String filename=null;
+	static File f=null;
+	static boolean swap;//it stands for shall we add property , it is true when we have to add property i.e. when a new file is created but its false when we don't have to add property i.e. when we load a file	
+	static String fileprop=null;//for storing property of a class
+	static File f2=null;//for storing property of a class
+		
+	static RandomAccessFile raff;//raf front
+	static RandomAccessFile rafb;//raf back
+
+	static int typearr[]=null;//for storing type of members of the subclass 
+	static String namearr[]=null;//for storing name of members of subclass
+	static byte misarr[]=null;//for storing the element miss or apply functionality
+	static Field farr[]=null;//for storing all the fields of the sub class
+
+	static byte misarru[]=null;//for miss and update functionality
+
+	public boolean isLess(Field f1,Field f2)//it compares the field names if field 1 name is less than field 2 name it returns true else false
+	{
+		String str1=f1.getName();
+		String str2=f2.getName();
+
+		if(str1.compareTo(str2)<0)
+		{
+			return true;
+		}
+		else
+		return false;
+	}
+	public void sortArray(Field arr[])
+	{
+		int minindex;
+		for(int i=0;i<arr.length-1;i++)
+		{
+			minindex=i;
+			for(int j=i+1;j<arr.length;j++)	
+			{
+				if(isLess(arr[j],arr[minindex]))
+				{
+					minindex=j;	
+				}
+			}
+
+			if(i!=minindex)
+			{
+				Field temp=arr[i];
+				arr[i]=arr[minindex];
+				arr[minindex]=temp;
+			}
+		}
+	}
+
+	public static void loadFile(String file)throws FileNotPresentException
+	{
+		String file2=new String(file);
+		file+=".db";
+		file2+=".dp";
+		File f1=new File(file);
+		File f22=new File(file2);
+		if(!f1.isFile())
+		{
+			throw new FileNotPresentException("file named "+file+" is not present in this directory");
+		}
+		else if(!f22.isFile())
+		{
+			throw new FileNotPresentException("file named "+file2+" is not present in this directory");
+		}
+		else
+		{
+			filename=file;
+			f=new File(filename);
+			fileprop=file2;
+			f2=new File(fileprop);
+			System.out.println("file loaded");
+			swap=false;
+			try
+			{
+			raff=new RandomAccessFile(filename,"rw");
+			rafb=null;
+			}
+			catch(FileNotFoundException e)
+			{
+				throw new FileNotPresentException("The file you stated is not present. Exception occured in loadFile()");
+			}
+		}	
+	}
+
+
+	public static void createFile(String file)throws DatabaseException	
+	{
+		String file2=new String(file);
+		file+=".db";
+		file2+=".dp";
+		File f1=new File(file);
+		File f22=new File(file2);
+		if(f1.isFile())
+		{
+			throw new FileAlreadyPresentException("file named "+file+" is already present in this directory");
+		}
+		else if(f22.isFile())
+		{
+			throw new FileAlreadyPresentException("file named "+file2+" is already present in this directory");	
+		}
+		else
+		{
+			try
+			{
+				f1.createNewFile();
+				f22.createNewFile();
+				System.out.println("file created");	
+				filename=file;
+				fileprop=file2;
+				f=new File(filename);	
+				f2=new File(fileprop);
+				swap=true;
+			}
+			catch(IOException i)
+			{
+				throw new DatabaseIOException("Some error occured in I/O Operation in createFile() method");
+			}
+		}
+	}
+
+	public void writeBoolean(RandomAccessFile raf,boolean b)throws IOException
+	{
+		try
+		{
+			raf.writeBoolean(b);
+			//giveBreak(raf);
+		}
+		catch(IOException e)
+		{
+			System.out.println("exception in writeBoolean()");
+			throw e;
+		}
+	}
+	public void writeLong(RandomAccessFile raf,long l)throws IOException
+	{
+		try
+		{
+			raf.writeLong(l);
+			//giveBreak(raf);
+		}
+		catch(IOException e)
+		{
+			System.out.println("exception in writeLong()");
+			throw e;
+		}
+	}
+	
+	public void writeShort(RandomAccessFile raf,short s)throws IOException
+	{
+		try
+		{
+			raf.writeShort(s);
+			//giveBreak(raf);
+		}
+		catch(IOException e)
+		{
+			System.out.println("Exception in writeShort()");
+			throw e;
+		}
+	}
+	public void writeByte(RandomAccessFile raf,byte b)throws IOException
+	{
+		try
+		{
+			raf.writeByte(b);
+			//giveBreak(raf);
+		}
+		catch(IOException e)
+		{
+			System.out.println("Exception in writeByte()");
+			throw e;
+		}
+	}
+	public void writeDouble(RandomAccessFile raf,double d)throws IOException
+	{
+		try
+		{
+			raf.writeDouble(d);
+			//giveBreak(raf);
+		}
+		catch(IOException e)
+		{
+			System.out.println("exception in writeDouble()");
+			throw e;
+		}
+	}
+	public void writeInt(RandomAccessFile raf,int i)throws IOException
+	{
+		try
+		{
+			raf.writeInt(i);
+			//giveBreak(raf);
+		}
+		catch(IOException e)
+		{
+			System.out.println("exception in writeInt()");
+			throw e;
+		}
+	}	
+	public void writeFloat(RandomAccessFile raf,Float f)throws IOException
+	{
+		try
+		{
+			raf.writeFloat(f);
+			//giveBreak(raf);
+		}
+		catch(IOException e)
+		{
+			System.out.println("Exception in writeFloat()");
+			throw e;
+		}
+	}
+
+	/*public void giveBreak(RandomAccessFile raf)throws IOException
+	{
+		try
+		{
+		raf.writeChar(';');
+		}
+		catch(IOException e)
+		{
+			System.out.println("exception in giveBreak()");
+			throw e;
+		}
+	}*/
+	public void writeString(RandomAccessFile raf,String str)throws IOException,StringLimitExceededException,NullMemberException	
+	{
+		try
+		{
+			char arr1[]=str.toCharArray();
+			if(arr1.length>20)
+			{
+				throw new StringLimitExceededException("The size of string should not increase more than 20 characters");
+			}
+			char arr[]=new char[20];
+			int i=0;
+			for(i=0;i<arr1.length;i++) 
+			arr[i]=arr1[i];
+
+			for(;i<arr.length;i++)
+			arr[i]=' ';
+			
+			for(i=0;i<arr.length;i++)
+			raf.writeChar(arr[i]);
+
+			//giveBreak(raf);
+		}
+		catch(IOException e)
+		{
+			System.out.println("exception found in writeString()");
+			System.out.println(e);
+			throw e;
+		}
+		catch(NullPointerException e)
+		{
+			throw new NullMemberException("Some String member in your class is null. Exception found in writeString()");
+		}
+	}
+
+	public String getType(Field f)
+	{
+		String str=f.getType().getName();
+		//System.out.println(str);
+
+		switch(str)
+		{
+			case "java.lang.String":
+			return "s";
+			case "int":
+			return "i";
+			case "float":
+			return "f";
+			case "double":
+			return "d";
+			case "short":	
+			return "sh";
+			case "long":
+			return "l";
+			case "byte":
+			return "b";
+			case "boolean":
+			return "bo";
+		}
+		return "a";
+	}
+	
+	public void isNull(Field arr[])throws DatabaseException//This method checks weather any string is null or any non primitive element is present in the class
+	{
+		int i=0;
+		try
+		{
+		for(i=0;i<arr.length;i++)
+		{
+			if(getType(arr[i]).equals("s"))
+			{
+				if((String)arr[i].get(this)==null)
+				{
+					throw new NullMemberException(""+arr[i].getName()+" member of "+this.getClass()+ " is not initialized");
+				}	
+			}
+			else if(getType(arr[i]).equals("a"))
+			{
+				throw new PrimitiveTypeNotFoundException(arr[i].getName()+" member of "+this.getClass()+" is not a primitive type element");			
+			}
+		}
+		}
+		catch(IllegalAccessException e)
+		{
+			throw new PrivateMemberException(arr[i].getName().toString()+" is declared private. Make it public");
+		}
+		
+		
+	}
+
+	public boolean isPropertyFileEmpty()
+	{
+		if(f2.length()==0)	
+		{
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
+
+		
+
+	public void writeProperty(Field arr[])throws DatabaseException//it gets sorted array of fields as the argument
+	{
+		
+		try
+		{
+		RandomAccessFile raf=new RandomAccessFile(fileprop,"rw");
+		
+		for(int i=0;i<arr.length;i++)
+		{
+			switch(getType(arr[i]))
+			{
+				case "s":
+				writeString(raf,"String");
+				break;
+				case "i":
+				writeString(raf,"Integer");
+				break;
+				case "f":
+				writeString(raf,"Float");
+				break;
+				case "d":
+				writeString(raf,"Double");
+				break;
+				case "sh":
+				writeString(raf,"Short");
+				break;
+				case "b":
+				writeString(raf,"Byte");
+				break;
+				case "l":
+				writeString(raf,"Long");
+				break;
+				case "bo":
+				writeString(raf,"Boolean");
+				break;
+			}
+		}
+
+		
+		for(int i=0;i<arr.length;i++)
+		{
+			writeString(raf,arr[i].getName().toString());	
+		}
+		raf.close();
+		
+		}
+		catch(FileNotFoundException e)
+		{
+			throw new FileNotPresentException("file named "+filename+" can't be discovered"); 
+		}
+		catch(IOException e)	
+		{
+			throw new DatabaseIOException("Some I/O Exception Occured in writeRecord() method");
+		}
+		
+	}
+
+	
+	/*public void readBreak(RandomAccessFile raf)throws IOException
+	{
+		try
+		{
+			raf.readChar();
+		}
+		catch(IOException e)
+		{
+			throw e;
+		}
+	}*/
+	
+	public boolean readBoolean(RandomAccessFile raf)throws EOFException,IOException
+	{
+		try
+		{
+			boolean b=raf.readBoolean();
+			//readBreak(raf);
+			return b;
+		}
+		catch(EOFException e)	
+		{
+			throw e;
+		}
+		catch(IOException e)
+		{
+			throw e;
+		}
+	}	
+	
+	public double readDouble(RandomAccessFile raf)throws EOFException,IOException
+	{
+		try
+		{
+			double d=raf.readDouble();
+			//readBreak(raf);
+			return d;
+		}
+		catch(EOFException e)
+		{
+			throw e;
+		}
+		catch(IOException e)
+		{
+			throw e;
+		}
+	}
+	public float readFloat(RandomAccessFile raf)throws EOFException,IOException
+	{
+		try
+		{
+			float f=raf.readFloat();
+			//readBreak(raf);
+			return f;
+		}
+		catch(EOFException e)
+		{
+			throw e;
+		}
+		catch(IOException e)
+		{
+			throw e;
+		}
+	}
+	public long readLong(RandomAccessFile raf)throws EOFException,IOException
+	{
+		try
+		{
+			long l=raf.readLong();
+			//readBreak(raf);
+			return l;
+		}
+		catch(EOFException e)
+		{
+			throw e;
+		}
+		catch(IOException e)
+		{
+			throw e;
+		}
+	}
+	public short readShort(RandomAccessFile raf)throws EOFException,IOException
+	{
+		try
+		{
+			short s=raf.readShort();
+			//readBreak(raf);
+			return s;
+		}
+		catch(EOFException e)
+		{
+			throw e;
+		}
+		catch(IOException e)
+		{
+			throw e;
+		}
+	}
+	public byte readByte(RandomAccessFile raf)throws EOFException,IOException
+	{
+		try
+		{
+			byte b=raf.readByte();
+			//readBreak(raf);
+			return b;
+		}
+		catch(EOFException e)
+		{
+			throw e;
+		}
+		catch(IOException e)
+		{
+			throw e;
+		}
+	}
+	public int readInt(RandomAccessFile raf)throws EOFException,IOException
+	{
+		try
+		{
+			int i=raf.readInt();
+			//readBreak(raf);
+			return i;
+		}
+		catch(EOFException e)
+		{
+			throw e;	
+		}
+		catch(IOException e)
+		{
+			throw e;
+		}
+	}
+
+	public String readString(RandomAccessFile raf)throws EOFException,IOException	
+	{
+		try
+		{
+			char arr[]=new char[20];
+			for(int i=0;i<arr.length;i++)
+			{
+				arr[i]=raf.readChar();
+			}
+			return String.copyValueOf(arr,0,20).trim();
+		}
+		
+		catch(EOFException e)
+		{
+			throw e;
+		}
+		catch(IOException e)
+		{
+			throw e;
+		}
+	}
+
+	public void checkP(RandomAccessFile raf,String str,Field f) throws DatabaseException //it is used to compare the string present in file with the string in argument
+	{
+		String str1="";
+		try
+		{
+			str1=readString(raf);
+			if(!str1.equals(str))
+			{
+				throw new ClassMembersModifiedException("Some class members of the class have been modified. Do not change the members of your  "+this.getClass()+ " once you have created the database file. Create Another Database File for a new Class");
+			}
+		}
+		catch(EOFException e)
+		{
+			throw new ClassMembersModifiedException("Some class members of the class have been modified. Do not change the members of your "+this.getClass()+ " once you have created the database file. Create Another Database File for a new Class");	
+		}
+		catch(IOException e)
+		{
+			throw new DatabaseIOException("Some I/O Exception Occured in checkP() method");	
+		}
+	}	
+
+	
+
+
+	//continue from here
+	
+	public void getTypeAndNameArray(Field arr[])//here arr is the sorted field array passed in the argument
+	{
+		farr=arr;
+		typearr=new int[arr.length];
+		for(int i=0;i<arr.length;i++)
+		{
+			switch(getType(arr[i]))
+			{
+				case "s"://for string its 0
+				typearr[i]=0;
+				break;
+				case "i":
+				typearr[i]=1;//for integer 1
+				break;
+				case "f":
+				typearr[i]=2;//for float 2
+				break;
+				case "d":
+				typearr[i]=3;//for double 3
+				break;
+				case "sh":
+				typearr[i]=4;//for short 4
+				break;
+				case "b":
+				typearr[i]=5;//for byte 5
+				break;
+				case "l":
+				typearr[i]=6;//for long 6
+				break;
+				case "bo":
+				typearr[i]=7;//for boolean 7
+				break;
+			}
+		}
+
+		namearr=new String[arr.length];
+		for(int i=0;i<arr.length;i++)
+		{
+			namearr[i]=arr[i].getName().toString();	
+		}	
+	}
+
+	public boolean arePropertiesCorrect(Field arr[])throws DatabaseException
+	{
+		try
+		{
+		RandomAccessFile raf=new RandomAccessFile(fileprop,"rw");
+		
+		for(int i=0;i<arr.length;i++)
+		{
+			switch(getType(arr[i]))
+			{
+				case "s":
+				checkP(raf,"String",arr[i]);
+				break;
+				case "i":
+				checkP(raf,"Integer",arr[i]);
+				break;
+				case "f":
+				checkP(raf,"Float",arr[i]);
+				break;
+				case "d":
+				checkP(raf,"Double",arr[i]);
+				break;
+				case "sh":
+				checkP(raf,"Short",arr[i]);
+				break;
+				case "b":
+				checkP(raf,"Byte",arr[i]);
+				break;
+				case "l":
+				checkP(raf,"Long",arr[i]);
+				break;
+				case "bo":
+				checkP(raf,"Boolean",arr[i]);
+				break;
+			}
+		}
+
+		for(int i=0;i<arr.length;i++)
+		{
+			checkP(raf,arr[i].getName().toString(),arr[i]);	
+		}
+		raf.close();
+		
+		return true;
+		
+		}
+		catch(FileNotFoundException e)
+		{
+			throw new FileNotPresentException("file named "+filename+" can't be discovered"); 
+		}
+		catch(IOException e)	
+		{
+			throw new DatabaseIOException("Some I/O Exception Occured in writeRecord() method");
+		}		
+		catch(ClassMembersModifiedException e)
+		{
+			throw e;
+		}
+	}	
+	
+	public int getIndex(String str)
+	{
+		for(int i=0;i<namearr.length;i++)
+		{
+			if(namearr[i].equals(str))
+			return i;		
+		}
+		
+		return -1;	
+	}
+	
+	public boolean hasMoreRecords() throws IOException
+	{
+		
+		if(raff.getFilePointer()!=raff.length())
+		{
+			return true;
+		}
+		else 
+		{
+			return false;
+		}
+	}	
+
+	public void skip(RandomAccessFile raf,int i)throws IOException	
+	{
+		switch(i)
+		{
+			case 0://for string
+			raf.skipBytes(40);
+			break;
+			case 1://for int
+			raf.skipBytes(4);
+			break;
+			case 2://for float
+			raf.skipBytes(4);
+			break;
+			case 3://for double
+			raf.skipBytes(8);
+			break;
+			case 4://for short
+			raf.skipBytes(2);
+			break;
+			case 5://for byte
+			raf.skipBytes(1);
+			break;
+			case 6://for long
+			raf.skipBytes(8);
+			break;
+			case 7://for boolean
+			raf.skipBytes(1);
+			break;
+		}
+	}
+
+	public void readput(RandomAccessFile raf,int i,int index)throws IllegalAccessException,EOFException,IOException//used for putting the read values in members of the subclass variables
+	{
+		switch(i)
+		{
+			case 0://for string
+			farr[index].set(this,readString(raf));
+			break;
+			case 1://for int
+			farr[index].set(this,readInt(raf));
+			break;
+			case 2://for float
+			farr[index].set(this,readFloat(raf));
+			break;
+			case 3://for double
+			farr[index].set(this,readDouble(raf));
+			break;
+			case 4://for short
+			farr[index].set(this,readShort(raf));
+			break;
+			case 5://for byte
+			farr[index].set(this,readByte(raf));
+			break;
+			case 6://for long
+			farr[index].set(this,readLong(raf));
+			break;
+			case 7://for boolean
+			farr[index].set(this,readBoolean(raf));
+			break;		
+		}
+	}
+	
+	public void updateWrite()throws DatabaseException //writes to update files using rafb
+	{
+		try
+		{
+		for(int i=0;i<misarru.length;i++)
+		{
+			if(misarru[i]==0)
+			{
+				switch(typearr[i])
+				{
+					case 0://for string
+					skip(rafb,typearr[i]);
+					break;
+					case 1://for int
+					skip(rafb,typearr[i]);
+					break;
+					case 2://for float
+					skip(rafb,typearr[i]);
+					break;
+					case 3://for double
+					skip(rafb,typearr[i]);
+					break;
+					case 4://for short
+					skip(rafb,typearr[i]);
+					break;
+					case 5://for byte
+					skip(rafb,typearr[i]);
+					break;
+					case 6://for long
+					skip(rafb,typearr[i]);
+					break;
+					case 7://for boolean
+					skip(rafb,typearr[i]);
+					break;
+				}
+			}
+			else
+			{
+				switch(typearr[i])
+				{
+					case 0://for string
+					writeString(rafb,(String)farr[i].get(this));
+					break;
+					case 1://for int
+					writeInt(rafb,(Integer)farr[i].get(this));
+					break;
+					case 2://for float
+					writeFloat(rafb,(Float)farr[i].get(this));
+					break;
+					case 3://for double
+					writeDouble(rafb,(Double)farr[i].get(this));
+					break;
+					case 4://for short
+					writeShort(rafb,(Short)farr[i].get(this));
+					break;
+					case 5://for byte
+					writeByte(rafb,(Byte)farr[i].get(this));
+					break;
+					case 6://for long
+					writeLong(rafb,(Long)farr[i].get(this));
+					break;
+					case 7://for boolean
+					writeBoolean(rafb,(Boolean)farr[i].get(this));
+					break;
+				}	
+			}
+		}
+		}
+		catch(IOException e)	
+		{
+			throw new DatabaseIOException("Some IO Exception occured in updateWrite()");
+		}
+		catch(IllegalAccessException e)
+		{
+			throw new PrivateMemberException("Your class has some private members in it that can't be accessed. Make them public. Error occured in updateWrite() ");
+		}
+	}	
+
+	public void update()throws DatabaseException
+	{
+		if(rafb==null)		
+		{
+			throw new UpdateBeforeSelectException("You must first select a record by readRecord() and then update it using update()");
+		}
+		
+
+		misarru=new byte[namearr.length];
+		for(int i=0;i<misarru.length;i++)
+		misarru[i]=(byte)1;
+
+		updateWrite();
+		rafb=null;//it is made null beacuse update operation must be done only once immediately after a record is read
+	}
+	public void update(String str)throws DatabaseException
+	{
+		if(rafb==null)		
+		{
+			throw new UpdateBeforeSelectException("You must first select a record by readRecord() and then update it using update()");
+		}
+		StringTokenizer st=new StringTokenizer(str,",");
+
+		misarru=new byte[namearr.length];
+		for(int i=0;i<misarru.length;i++)
+		misarru[i]=(byte)0;
+
+		while(st.hasMoreTokens())
+		{
+			int in=getIndex(st.nextToken());
+			if(in==-1)
+			throw new InvalidArgumentException("The members specified as arguments in update() method are invalid.Specify only arguments that are member of your original class extending Database class");
+			misarru[in]=1;
+		}
+
+		updateWrite();
+		rafb=null;//it is made null beacuse update operation must be done only once immediately after a record is read
+	}
+
+	public void readRecord()throws DatabaseException
+	{
+		try
+		{
+			if(rafb==null)
+			rafb=new RandomAccessFile(filename,"rw");
+			rafb.seek(raff.getFilePointer());
+		
+		
+		for(int i=0;i<misarr.length;i++)
+		{
+			if(misarr[i]==0)
+			{
+				switch(typearr[i])
+				{
+					case 0://for string
+					skip(raff,typearr[i]);
+					break;
+					case 1://for int
+					skip(raff,typearr[i]);
+					break;
+					case 2://for float
+					skip(raff,typearr[i]);
+					break;
+					case 3://for double
+					skip(raff,typearr[i]);
+					break;
+					case 4://for short
+					skip(raff,typearr[i]);
+					break;
+					case 5://for byte
+					skip(raff,typearr[i]);
+					break;
+					case 6://for long
+					skip(raff,typearr[i]);
+					break;
+					case 7://for boolean
+					skip(raff,typearr[i]);
+					break;
+				}
+			}
+			else
+			{
+				switch(typearr[i])
+				{
+					case 0://for string
+					readput(raff,typearr[i],i);
+					break;
+					case 1://for int
+					readput(raff,typearr[i],i);
+					break;
+					case 2://for float
+					readput(raff,typearr[i],i);
+					break;
+					case 3://for double
+					readput(raff,typearr[i],i);
+					break;
+					case 4://for short
+					readput(raff,typearr[i],i);
+					break;
+					case 5://for byte
+					readput(raff,typearr[i],i);
+					break;
+					case 6://for long
+					readput(raff,typearr[i],i);
+					break;
+					case 7://for boolean
+					readput(raff,typearr[i],i);
+					break;
+				}	
+			}
+		}
+		}
+		catch(FileNotFoundException e)
+		{
+			throw new FileNotPresentException("We are not able to find the database file in readRecord() method");
+		}
+		catch(IOException e)
+		{
+			throw new DatabaseIOException("Some IO Exception occured in readRecord()");			
+		}
+		catch(IllegalAccessException e)
+		{
+			throw new PrivateMemberException("Some of the variable in "+this.getClass()+" are declared private. Make them public so that we can put values in them after reading the record");
+		}
+		catch(NullPointerException e)
+		{
+			throw new ReadBeforeInitException("You have tried to readRecord before calling initRead()");
+		}
+	}	
+
+	public void initRead()throws DatabaseException
+	{
+		try
+		{
+		if(filename==null)			
+		{
+			throw new FileNameNotKnownException("Either createFile() first or loadFile() before reading a record");
+		}
+		raff=new RandomAccessFile(filename,"rw");
+		rafb=null;	
+		if(raff.length()==0)
+		{
+			throw new EmptyFileException("The file which you are trying to read is empty.");
+		}
+		
+		Field arr[]=this.getClass().getDeclaredFields();
+		sortArray(arr);
+		if(namearr==null||typearr==null)//property check is only done when the class loads or is created newly. 
+		{
+			//System.out.println("d");
+			arePropertiesCorrect(arr);//it throws ClassMembersModifiedException, once we change the original class
+			getTypeAndNameArray(arr);//it records all types and names of members in a typearr & namearr array
+		}
+
+		misarr=new byte[namearr.length];
+		for(int i=0;i<misarr.length;i++)
+		misarr[i]=(byte)1;
+
+		}
+		catch(FileNotFoundException e)
+		{
+			throw new FileNotPresentException("We are not able to find the database file in initRead() method");			
+		}
+		catch(IOException e)
+		{
+			throw new DatabaseIOException("Some IO Exception occured in initRead()");
+		}
+	}
+	public void initRead(String str)throws DatabaseException	
+	{
+		try
+		{
+		StringTokenizer st=new StringTokenizer(str,",");
+		if(filename==null)			
+		{
+			throw new FileNameNotKnownException("Either createFile() first or loadFile() before reading a record");
+		}
+		raff=new RandomAccessFile(filename,"rw");
+		rafb=null;	
+		if(raff.length()==0)
+		{
+			throw new EmptyFileException("The file which you are trying to read is empty.");
+		}
+		
+		Field arr[]=this.getClass().getDeclaredFields();
+		sortArray(arr);
+		if(namearr==null||typearr==null)//property check is only done when the class loads or is created newly. 
+		{
+			//System.out.println("d");
+			arePropertiesCorrect(arr);//it throws ClassMembersModifiedException, once we change the original class
+			getTypeAndNameArray(arr);//it records all types and names of members in a typearr & namearr array
+		}
+
+		misarr=new byte[namearr.length];
+		for(int i=0;i<misarr.length;i++)
+		misarr[i]=(byte)0;
+
+		while(st.hasMoreTokens())
+		{
+			int in=getIndex(st.nextToken());
+			if(in==-1)
+			throw new InvalidArgumentException("The members specified as arguments in initRead() method are invalid.Specify only arguments that are member of your original class extending database class");
+			misarr[in]=1;
+		}
+		}
+		catch(FileNotFoundException e)
+		{
+			throw new FileNotPresentException("We are not able to find the database file in initRead() method");			
+		}
+		catch(IOException e)
+		{
+			throw new DatabaseIOException("Some IO Exception occured in initRead()");
+		}
+		
+	}
+
+	public void writeRecord() throws DatabaseException
+	{
+		
+		Field arr[]=this.getClass().getDeclaredFields();int i=0;
+		if(filename==null)			
+		{
+			throw new FileNameNotKnownException("Either createFile() first or loadFile() before writing a record");
+		}
+		else
+		{
+			try
+			{
+				sortArray(arr);
+				isNull(arr);
+				RandomAccessFile raf=new RandomAccessFile(filename,"rw");
+				long filelength=f.length();
+				
+				//check if property file is empty or not
+				if(isPropertyFileEmpty())	
+				{
+					writeProperty(arr);
+				}
+				//check weather the class properties are changed or not
+				
+
+				if(namearr==null||typearr==null)//property check is only done when the class loads or is created newly. 
+				{
+					//System.out.println("d");
+					arePropertiesCorrect(arr);//it throws ClassMembersModifiedException, once we change the original class
+					getTypeAndNameArray(arr);//it records all types and names of members in a typearr & namearr array
+				}
+				
+				//moving to the end of file so that we can append the file
+				raf.seek(filelength);
+				//writing the file starts now
+				
+				for(i=0;i<arr.length;i++)
+				{
+					switch(getType(arr[i]))
+					{
+						case "s":
+						writeString(raf,(String)arr[i].get(this));
+						break;
+						case "i":
+						writeInt(raf,(Integer)arr[i].get(this));
+						break;
+						case "f":
+						writeFloat(raf,(Float)arr[i].get(this));
+						break;
+						case "d":
+						writeDouble(raf,(Double)arr[i].get(this));
+						break;
+						case "sh":
+						writeShort(raf,(Short)arr[i].get(this));
+						break;
+						case "b":
+						writeByte(raf,(Byte)arr[i].get(this));
+						break;
+						case "l":
+						writeLong(raf,(Long)arr[i].get(this));
+						break;
+						case "bo":
+						writeBoolean(raf,(Boolean)arr[i].get(this));
+						break;
+					}
+				}
+			
+			}
+			catch(FileNotFoundException e)
+			{
+				throw new FileNotPresentException("file named "+filename+" can't be discovered");	
+			}
+			catch(IOException e)
+			{
+				throw new DatabaseIOException("Some I/O Exception Occured in writeRecord() method");
+			}
+			catch(IllegalAccessException e)	
+			{
+				throw new PrivateMemberException(arr[i].getName().toString()+" of "+this.getClass()+" class"+" is declared private. Make it public");
+			}
+			catch(ClassMembersModifiedException e)
+			{
+				throw e;
+			}
+		}
+	}
+
+	
+}
